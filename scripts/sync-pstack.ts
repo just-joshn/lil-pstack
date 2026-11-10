@@ -80,10 +80,14 @@ function rebuildHost(plugin: string, host: string) {
 
   mkdirSync(skillsDir, { recursive: true });
   mkdirSync(agentsDir, { recursive: true });
-  mkdirSync(rulesDir, { recursive: true });
+  mkdirSync(path.dirname(rulesDir), { recursive: true });
 
   clearDirectory(skillsDir);
   clearDirectory(agentsDir);
+  if (existsSync(rulesDir)) {
+    clearDirectory(rulesDir);
+    rmSync(rulesDir, { recursive: true, force: true });
+  }
 
   for (const entry of readdirSync(path.join(plugin, "skills"), {
     withFileTypes: true,
@@ -110,18 +114,6 @@ function rebuildHost(plugin: string, host: string) {
     );
     symlinkSync(relative, target);
   }
-
-  writeFileSync(
-    path.join(rulesDir, "pstack-always-on.mdc"),
-    `---
-description: lil-pstack always runs under poteto-mode
-alwaysApply: true
----
-You are always under poteto-mode. Do not require a /poteto-mode slash.
-Read the poteto-mode SKILL.md before any work, including its inline Principles index. Use the absolute path from the session preamble.
-Follow that skill for the user task. Skills named by the user prompt still apply under this always-on poteto-mode.
-`,
-  );
 }
 
 function clearDirectory(dir: string) {

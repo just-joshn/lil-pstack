@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Agent } from "@cursor/sdk";
@@ -23,22 +23,35 @@ if (!apiKey) {
 }
 
 const paths = resolvePstackPaths(repoRoot);
-const userTask =
-  "Do no file edits and do not spawn subagents. Reply with exactly three lines then stop:\nPLAYBOOK=<kebab-case playbook name poteto-mode matched for this task>\nSLASH=no\nACTIVE=poteto-mode\nThe task is a read-only question: how does wrapPromptWithAlwaysOnPoteto activate poteto-mode without a slash?";
+const skillBody = readFileSync(paths.potetoSkillPath, "utf8");
+const afterHeading = skillBody.split("\n# Poteto mode\n")[1] ?? "";
+const quoteNeedle = afterHeading
+  .split(/\r?\n/)
+  .map((line) => line.trim())
+  .find((line) => line.length > 0);
+if (!quoteNeedle) {
+  throw new Error("Could not read the first poteto-mode body sentence.");
+}
 
-const prompt = [
-  "You are running inside lil-pstack.",
-  "Answer only with the three required lines.",
-  "",
-  wrapPromptWithAlwaysOnPoteto(userTask, paths.potetoSkillPath),
-].join("\n");
+const userTask = [
+  "Do no file edits and do not spawn subagents.",
+  'In the poteto-mode skill already in this request, find the first sentence under the heading that is exactly "# Poteto mode".',
+  "Reply with that sentence on line 1.",
+  "On line 2, print only the absolute poteto-mode SKILL.md path that the always-on instructions say to put in every poteto-agent Task prompt.",
+  "Reply with exactly those two lines and nothing else.",
+].join(" ");
+
+const prompt = wrapPromptWithAlwaysOnPoteto(userTask, paths.potetoSkillPath);
 
 const agent = await Agent.create({
   apiKey,
   name: "lil-pstack-live-always-on",
   model: { id: process.env.CURSOR_MODEL ?? "composer-2" },
   agents: loadPstackAgents(repoRoot),
-  local: pstackLocalOptions(repoRoot, repoRoot),
+  local: {
+    ...pstackLocalOptions(repoRoot, repoRoot),
+    settingSources: ["project"],
+  },
 });
 
 const chunks: string[] = [];
@@ -55,12 +68,21 @@ try {
   }
   const result = await run.wait();
   const text = chunks.join("");
+  const lines = text
+    .trim()
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
   mkdirSync(outDir, { recursive: true });
   const report = [
     `status=${result.status}`,
     `durationMs=${result.durationMs}`,
     `version=${paths.version}`,
     `potetoSkillPath=${paths.potetoSkillPath}`,
+    `lineCount=${lines.length}`,
+    `settingSources=project`,
+    `expectedLine1=${quoteNeedle}`,
     "",
     text.trim(),
     "",
@@ -69,9 +91,9 @@ try {
 
   const ok =
     result.status === "finished" &&
-    /PLAYBOOK=investigation/i.test(text) &&
-    /SLASH=no/i.test(text) &&
-    /ACTIVE=poteto-mode/i.test(text);
+    lines.length === 2 &&
+    lines[0] === quoteNeedle &&
+    lines[1] === paths.potetoSkillPath;
 
   console.log(report);
   console.log(ok ? "LIVE_PASS" : "LIVE_FAIL");

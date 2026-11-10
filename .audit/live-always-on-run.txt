@@ -1,0 +1,16 @@
+$ bun run scripts/live-always-on.ts
+04:34:40.728 INFO  LocalCursorRulesService load completed meta={durationMs: 33, ruleCount: 4}
+04:34:40.734 INFO  LocalCursorRulesService load completed meta={durationMs: 39, ruleCount: 4}
+04:34:40.746 INFO  AgentSkillsCursorRulesService load completed meta={durationMs: 51, ruleCount: 125, skillCount: 125, servedFromCache: false}
+status=finished
+durationMs=5032
+version=0.15.36
+potetoSkillPath=/Users/josh-desktop/src/personal/lil-pstack/vendor/pstack/skills/poteto-mode/SKILL.md
+lineCount=2
+settingSources=project
+expectedLine1=Bundled skills live at `../<name>/SKILL.md` from this file, so put this file's absolute path in every `poteto-agent` prompt.
+
+Bundled skills live at `../<name>/SKILL.md` from this file, so put this file's absolute path in every `poteto-agent` prompt.
+/Users/josh-desktop/src/personal/lil-pstack/vendor/pstack/skills/poteto-mode/SKILL.md
+
+LIVE_PASS

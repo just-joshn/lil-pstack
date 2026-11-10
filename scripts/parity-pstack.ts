@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -67,6 +68,25 @@ function listAgentNames(pluginRoot: string) {
     .sort();
 }
 
+function readPluginVersion(pluginRoot: string) {
+  const pluginPath = path.join(pluginRoot, "plugin.json");
+  if (!existsSync(pluginPath)) {
+    return undefined;
+  }
+  try {
+    const plugin = JSON.parse(readFileSync(pluginPath, "utf8")) as {
+      version?: string;
+    };
+    return plugin.version;
+  } catch {
+    return undefined;
+  }
+}
+
+function fileSha(filePath: string) {
+  return createHash("sha256").update(readFileSync(filePath)).digest("hex");
+}
+
 function check(name: string, ok: boolean, detail: string): Check {
   return { name, ok, detail };
 }
@@ -102,7 +122,7 @@ function main() {
     check(
       "skill-count",
       vendorSkills.length === 58,
-      `${vendorSkills.length} skills`,
+      `${vendorSkills.length} skills (vendored plugin only; not CursorPluginsAgentSkillsService)`,
     ),
   );
 
@@ -132,7 +152,13 @@ function main() {
   );
   checks.push(check("host-skills-dir", existsSync(hostSkills), hostSkills));
   checks.push(check("host-agents-dir", existsSync(hostAgents), hostAgents));
-  checks.push(check("host-always-on-rule", existsSync(hostRule), hostRule));
+  checks.push(
+    check(
+      "host-no-always-on-rule",
+      !existsSync(hostRule),
+      "always-on is prompt inject only",
+    ),
+  );
 
   const missingHostSkills = vendorSkills.filter(
     (name) => !existsSync(path.join(hostSkills, name)),
@@ -173,7 +199,36 @@ function main() {
     ),
   );
 
+  const install = Bun.spawnSync(
+    [process.execPath, "install", "--frozen-lockfile"],
+    { cwd: scriptsDir },
+  );
+  const commanderPath = path.join(
+    scriptsDir,
+    "node_modules",
+    "commander",
+    "package.json",
+  );
+  checks.push(
+    check(
+      "poteto-scripts-install",
+      install.exitCode === 0 && existsSync(commanderPath),
+      install.exitCode === 0
+        ? "bun install --frozen-lockfile ok"
+        : `exit ${install.exitCode}`,
+    ),
+  );
+
   if (existsSync(path.join(sourceRoot, "plugin.json"))) {
+    const sourceVersion = readPluginVersion(sourceRoot);
+    checks.push(
+      check(
+        "source-version-match",
+        sourceVersion !== undefined && sourceVersion === paths.version,
+        `source=${sourceVersion ?? "missing"} vendor=${paths.version}`,
+      ),
+    );
+
     const sourceSkills = listSkillDirs(sourceRoot);
     const onlySource = sourceSkills.filter((n) => !vendorSkills.includes(n));
     const onlyVendor = vendorSkills.filter((n) => !sourceSkills.includes(n));
@@ -202,6 +257,29 @@ function main() {
         "source-agent-inventory",
         sourceAgents.join("\0") === agentNames.join("\0"),
         `${sourceAgents.join(",")} vs ${agentNames.join(",")}`,
+      ),
+    );
+
+    const sourceSkill = path.join(
+      sourceRoot,
+      "skills",
+      "poteto-mode",
+      "SKILL.md",
+    );
+    const sourcePlugin = path.join(sourceRoot, "plugin.json");
+    const vendorPlugin = path.join(paths.pluginRoot, "plugin.json");
+    checks.push(
+      check(
+        "source-poteto-skill-hash",
+        fileSha(sourceSkill) === fileSha(paths.potetoSkillPath),
+        "poteto-mode/SKILL.md sha256",
+      ),
+    );
+    checks.push(
+      check(
+        "source-plugin-json-hash",
+        fileSha(sourcePlugin) === fileSha(vendorPlugin),
+        "plugin.json sha256",
       ),
     );
   } else {

@@ -86,7 +86,7 @@ describe("vendored pstack", () => {
       existsSync(
         path.join(paths.hostRoot, ".cursor", "rules", "pstack-always-on.mdc"),
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   test("poteto-mode ships all 23 playbooks", () => {

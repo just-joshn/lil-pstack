@@ -24,3 +24,8 @@ ts	phase	decision	why	evidence	result
 2026-11-10T04:32:00Z	pr	opened feat/always-on-pstack PR with always-on pstack vendor and parity harness	opening-a-pr end of figure-it-out; forge gh	pending-url	open
 2026-11-10T04:32:05Z	pr	PR 1 opened for always-on pstack	supersedes prior pr row that lacked the URL	https://github.com/just-joshn/lil-pstack/pull/1	open
 2026-11-10T04:32:05Z	handback	predicate VERIFIED on parity harness and live NL send; PR open	phase E closeout	https://github.com/just-joshn/lil-pstack/pull/1;.audit/live-always-on.txt	VERIFIED
+2026-11-10T04:34:52Z	review-followup	supersede weak live and verify rows from trail review 83345c04	reviewer marked predicate NOT VERIFIED; harden harness and live proof	agent 83345c04-4f0b-488b-9c82-1080ebfeddf4	open
+2026-11-10T04:34:52Z	design	removed host alwaysApply rule; always-on is prompt inject only	earlier design-revise said inject not alwaysApply; rule made mechanism ambiguous	scripts/sync-pstack.ts;vendor/pstack-host	open
+2026-11-10T04:34:52Z	harness	parity now checks source version hash install and no always-on rule; 27/27	close inventory soft-proof and script-deps gaps	.audit/parity-pstack.txt	tests green
+2026-11-10T04:34:52Z	live	live proof quotes first poteto body sentence plus absolute skill path; project settingSources only; exact two lines	replace instructed PLAYBOOK/SLASH/ACTIVE sentinels	.audit/live-always-on.txt	LIVE_PASS
+2026-11-10T04:34:52Z	verify	bun check green on 11 files; bun test 9 pass; parity 27/27; live pass	fresh artifacts for this tree after harness and live rewrite	.audit/bun-check.txt;.audit/bun-test.txt;.audit/parity-pstack.txt;.audit/live-always-on.txt	VERIFIED
