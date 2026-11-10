@@ -55,3 +55,6 @@ ts	phase	decision	why	evidence	result
 2026-11-10T05:20:17Z	verify	bun check green; bun test 15 pass; parity 29/29	prove slash attach on real harness	.audit/bun-check-slash.txt;.audit/bun-test-slash-all.txt;.audit/parity-pstack-slash.txt	VERIFIED
 2026-11-10T05:20:27Z	slash-fix	TUI unknown slash goes to sendPrompt; wrapPrompt attaches vendored slash skill body	close explore gap 1; keep always-on poteto; skip double poteto attach	src/tui/App.tsx;src/pstack.ts;tests/pstack.test.ts	tests green
 2026-11-10T05:20:27Z	verify	bun check green; bun test 15 pass; parity 29/29	prove slash attach on real harness	.audit/bun-check-slash.txt;.audit/bun-test-slash-all.txt;.audit/parity-pstack-slash.txt	VERIFIED
+2026-11-10T05:20:40Z	pr	opened PR for slash-skill attach	opening-a-pr after gap fix	pending	open
+2026-11-10T05:20:51Z	pr	opened PR 5 for slash-skill attach	opening-a-pr after gap fix; supersedes pending pr row	https://github.com/just-joshn/lil-pstack/pull/5	open
+2026-11-10T05:20:51Z	handback	predicate VERIFIED for local NL poteto plus slash-skill attach; cloud playbook paths deferred	phase E closeout for this unit	https://github.com/just-joshn/lil-pstack/pull/5;.audit/parity-pstack-slash.txt	VERIFIED
