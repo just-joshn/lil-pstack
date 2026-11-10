@@ -9,6 +9,7 @@ import React from "react";
 
 import { CodingAgentSession } from "./agent.js";
 import { runCli, type CliIo, type TuiLaunch } from "./cli.js";
+import { cursorPorts } from "./cursor-ports.js";
 import { App } from "./tui/App.js";
 
 async function readStdin() {
@@ -76,6 +77,7 @@ const io: CliIo = {
       cwd: input.cwd,
       force: input.force,
       model: input.model,
+      ports: cursorPorts,
     }),
 };
 

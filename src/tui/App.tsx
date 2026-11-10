@@ -20,6 +20,7 @@ import {
   type AgentEvent,
   type ModelChoice,
 } from "../agent.js";
+import { cursorPorts } from "../cursor-ports.js";
 import {
   getSlashCommand,
   getSlashCommandItems,
@@ -101,6 +102,7 @@ export function App({ apiKey, cwd, force, initialModel }: TuiAppProps) {
       cwd,
       force,
       model: initialModel,
+      ports: cursorPorts,
     });
   }
 
