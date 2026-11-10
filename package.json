@@ -10,15 +10,20 @@
   "scripts": {
     "dev": "bun run src/index.ts",
     "typecheck": "bun check",
-    "test": "bun test",
+    "fmt": "bun fmt --ignore-pattern 'vendor/**' src tests scripts *.md *.json bunfig.toml",
+    "fmt:check": "bun fmt --check --ignore-pattern 'vendor/**' src tests scripts *.md *.json bunfig.toml",
+    "sync:pstack": "bun run scripts/sync-pstack.ts",
+    "parity:pstack": "bun run scripts/parity-pstack.ts",
+    "parity:pstack:live": "bun run scripts/live-always-on.ts",
+    "test": "bun test tests",
     "build": "bun build ./src/cli.ts --target=bun --outdir=dist",
     "compile": "bun build --compile ./src/cli.ts --outfile dist/lil-pstack"
   },
   "files": [
     "src/",
     "vendor/pstack/",
+    "vendor/pstack-host/",
     "README.md",
-    "LICENSE",
     "THIRD_PARTY_NOTICES.md"
   ],
   "dependencies": {

@@ -1,0 +1,19 @@
+bun test v1.4.4 (38afee6c8)
+
+tests/pstack.test.ts:
+(pass) vendored pstack > plugin and poteto skill exist [0.14ms]
+(pass) vendored pstack > host skill symlink resolves to vendored poteto-mode [0.09ms]
+(pass) vendored pstack > local options mount the pstack host workspace [0.07ms]
+(pass) vendored pstack > always-on wrapper injects poteto skill body without requiring a slash [0.14ms]
+(pass) vendored pstack > buildPrompt keeps always-on poteto on every send [0.10ms]
+(pass) vendored pstack > loadPstackAgents includes poteto-agent [0.14ms]
+(pass) vendored pstack > host exposes every vendored skill and both agents [0.30ms]
+(pass) vendored pstack > poteto-mode ships all 23 playbooks [0.08ms]
+
+tests/opentui-smoke.test.ts:
+>0q+q4d73?1016$p?2027$p?2031$p?1004$p?2004$p?2026$p99;i=opentui-notifications:p=?;1337;Capabilities7501;?66;w=1; 66;s=2; >4;1mopentui-smoke-ok                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                22;default(pass) opentui 0.8.3 > createRoot can render a box and text [60.64ms]
+
+ 9 pass
+ 0 fail
+ 85 expect() calls
+Ran 9 tests across 2 files. [307.00ms]

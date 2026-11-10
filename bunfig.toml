@@ -1,0 +1,6 @@
+[fmt]
+# printWidth = 100
+# semi = false
+
+[test]
+pathIgnorePatterns = ["**/vendor/**", "**/node_modules/**", "**/dist/**"]
