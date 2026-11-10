@@ -32,7 +32,7 @@ bun test
 bun run parity:pstack
 ```
 
-`parity:pstack` compares the vendored plugin to the local Cursor pstack source when present, and checks always-on poteto wiring.
+`parity:pstack` compares the vendored plugin to the local Cursor pstack source when present, and checks always-on poteto wiring. `parity:pstack:live` proves skill-body inject. `parity:pstack:live-route` proves a plain prompt reads a matched playbook file.
 
 ## Refresh vendored pstack
 
