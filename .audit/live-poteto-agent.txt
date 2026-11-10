@@ -1,0 +1,108 @@
+status=finished
+durationMs=97230
+version=0.15.36
+settingSources=project
+launchCount=9
+potetoAgentLaunchCount=9
+truncatedTaskArgs=0
+launches=[{"source":"sdk_tool_call","toolName":"task","subagentType":"poteto-agent","callId":"tool_16421f74-c640-4c75-b782-49e26e3fdff"},{"source":"sdk_tool_call","toolName":"task","subagentType":"poteto-agent","callId":"tool_16421f74-c640-4c75-b782-49e26e3fdff"},{"source":"sdk_tool_call","toolName":"task","subagentType":"poteto-agent","callId":"tool_a5333eb2-9bd1-4cd7-8421-325853f15e3"},{"source":"sdk_tool_call","toolName":"task","subagentType":"poteto-agent","callId":"tool_a5333eb2-9bd1-4cd7-8421-325853f15e3"},{"source":"sdk_tool_call","toolName":"task","subagentType":"poteto-agent","callId":"tool_c3e18f8e-7d73-48a5-92e8-b5bf4640294"},{"source":"sdk_tool_call","toolName":"task","subagentType":"poteto-agent","callId":"tool_c3e18f8e-7d73-48a5-92e8-b5bf4640294"},{"source":"sdk_tool_call","toolName":"task","subagentType":"poteto-agent","callId":"tool_16421f74-c640-4c75-b782-49e26e3fdff"},{"source":"sdk_tool_call","toolName":"task","subagentType":"poteto-agent","callId":"tool_c3e18f8e-7d73-48a5-92e8-b5bf4640294"},{"source":"sdk_tool_call","toolName":"task","subagentType":"poteto-agent","callId":"tool_a5333eb2-9bd1-4cd7-8421-325853f15e3"}]
+
+Planning two stacked TUI PRs (footer first, pause second)—explore only, no source or plan-file edits. Reading the multi-phase plan playbook and spawning subagents for the explore step.
+
+
+Retrying exploration subagents with the allowed model slug after the default was rejected.
+**Goal.** You want a two-PR stack for the TUI. PR1 adds a persistent status footer with the active SDK run id and a live elapsed clock. PR2 adds a pause-related control that hangs off that footer. This turn is exploration only. You asked for no application edits and no plan file.
+
+**Smallest change when you implement later.** PR1 is one reserved footer row in `App`, a thin `CodingAgentSession` snapshot (`id` plus `startedAtMs`), and a timer while a run is active. PR2 reuses the same footer state and wires a control to `cancelCurrentRun()` unless product or the SDK adds real pause.
+
+**Playbook step 1.** This does not qualify for “skip the plan.” The work spans `src/tui/App.tsx`, likely `src/agent.ts`, new footer UI, new tests, viewport row math, and a product/SDK fork on what “pause” means.
+
+---
+
+### Exploration summary (three `poteto-agent` passes)
+
+**Entry points**
+
+| Path | Role |
+|------|------|
+| `src/index.ts` | TTY → `createCliRenderer` → `createRoot(App)` |
+| `src/tui/App.tsx` | Sole TUI. Layout, keyboard, transcript, input |
+| `src/agent.ts` | `CodingAgentSession`, `sendPrompt`, `cancelCurrentRun`, `formatDuration` |
+| `tests/opentui-smoke.test.ts` | Renderer smoke only. Does not mount `App` |
+
+**Run identity today**
+
+`CodingAgentSession` keeps `private currentRun: Run | null`, set in `sendPrompt` and cleared in `finally`. The SDK `Run` has `id` and optional `createdAt` (`node_modules/@cursor/sdk/dist/esm/run.d.ts`). The TUI never reads them. Duration only appears at the end via `result` events and `formatDuration` in the transcript.
+
+**Suggested PR1 data shape (inferred).** `ActiveRunInfo = { id: string; startedAtMs: number }` via a read-only getter, populated when `currentRun` is set, cleared in the same `finally` as today. Footer ticks with `formatDuration(Date.now() - startedAtMs)` on an interval.
+
+**Foundational Thinking** drove tying the footer to session run state, not React `busy`. `busy` is also true during `resetAgent` and `switchExecutionMode`, which do not set `currentRun`.
+
+**Layout**
+
+Bottom chrome is a column. Transcript box, optional scroll hint, then command / model / input panel. `transcriptViewportRows` subtracts **6** rows in input mode (more in command/model). The scroll hint is outside that budget, so a one-line footer must bump the reserved chrome in all three modes or small terminals clip.
+
+Default PR1 slot is a new row between scroll hint and bottom panel. `split-footer` on the renderer exists in OpenTUI but this repo uses `alternate-screen` only. Split footer is a wider alternative.
+
+**PR boundaries (exploration consensus)**
+
+| PR | Touch | Out of scope |
+|----|--------|--------------|
+| **PR1** | `src/tui/App.tsx`, new `StatusFooter` (name flexible), minimal `src/agent.ts` getter or run lifecycle events, pure footer format helpers + unit tests | Pause UI, `split-footer` in `index.ts`, duplicating run id in transcript |
+| **PR2** | Footer control + optional key in `App` / footer module, call existing `cancelActiveRun` | Second plumbing path for run id |
+
+Stack rule. PR2 branches from PR1’s branch (or waits for PR1 merge). It consumes PR1’s `FooterRunState` / `ActiveRunInfo`.
+
+---
+
+### PR2 and “pause”
+
+**Attack the Premise.** The shared premise is “PR2 can pause execution.” SDK `RunOperation` is only `"stream" | "wait" | "cancel" | "conversation"`. There is no pause on `Run`. A repo search under `@cursor/sdk` for pause found nothing. Today the TUI already cancels on Ctrl+C while `busy` via `cancelCurrentRun()`.
+
+```8:8:node_modules/@cursor/sdk/dist/esm/run.d.ts
+export type RunOperation = "stream" | "wait" | "cancel" | "conversation";
+```
+
+Optional `steer?(text)` is not suspend/resume. The session does not call it.
+
+PR2 options to nail in step 2 (prototype or product), not in this explore stop.
+
+1. **Stop** — footer control mirrors Ctrl+C. Honest with the SDK.
+2. **Pause label, cancel behavior** — only if you accept that copy.
+3. **Hold PR2 behavior** — footer shell disabled until a real pause API exists.
+4. **`steer` as soft interrupt** — needs a live prototype before it belongs in a plan.
+
+---
+
+### Verification commands (measured from `package.json`)
+
+- `bun check` / `bun run typecheck`
+- `bun run fmt:check`
+- `bun test tests` (no `App` or session coverage today)
+- Manual TUI. `bun run dev` with TTY and `CURSOR_API_KEY`
+- `bun run parity:pstack:live-agent` for agent harness, not footer UI
+
+New unit tests are expected for `formatDuration`, footer string helpers, and `activeRun` lifecycle with a mocked `Run`. Live lanes would use `control-cli` when you write the formal plan.
+
+---
+
+### Prototypes before a written plan (playbook step 2, not run here)
+
+Subagents flagged empirical forks for `playbooks/prototype.md` before step 4.
+
+- Whether `supports("cancel")` is always true on real local runs.
+- Cancel latency versus `cancelRequested` / footer phases.
+- Post-cancel, same-session `send()` behavior if you want “pause” wording.
+- Footer focus versus `TuiInput` while `busy` in OpenTUI.
+
+---
+
+### Subagents and stop point
+
+`grok-4.7-xhigh-fast` was rejected by the Task tool. Exploration ran on `composer-2.5-fast` per poteto-mode fallback.
+
+**Guard the Context Window** sent layout, session plumbing, and SDK pause reads to three poteto-agents instead of inlining `App.tsx` here.
+
+Per your instructions I stopped after playbook step 3. Steps 4–7 remain unwritten. No plan file. No source edits.
+
+When you want the full multi-phase plan document, say so and whether PR2 should mean Stop/cancel, a labeled pause-as-cancel, or wait for SDK pause. I would run step 2 prototypes where needed, then fill the skeleton under `docs/` and run `check-plan.mjs` without touching app code until execution.
