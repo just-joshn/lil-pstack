@@ -2,10 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readdirSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { buildPrompt } from "../src/agent.ts";
+import { getSlashCommand } from "../src/commands.ts";
 import {
   loadPstackAgents,
   pstackLocalOptions,
   resolvePstackPaths,
+  resolveSlashSkillPath,
   wrapPromptWithAlwaysOnPoteto,
 } from "../src/pstack.ts";
 
@@ -59,6 +61,38 @@ describe("vendored pstack", () => {
     expect(prompt).toContain("refactor the parser");
     expect(prompt).toContain("poteto-mode is always on");
     expect(prompt).toContain(resolvePstackPaths().potetoSkillPath);
+  });
+
+  test("slash skill names resolve to vendored SKILL.md files", () => {
+    const paths = resolvePstackPaths();
+    const help = resolveSlashSkillPath("/poteto-help how do I start");
+    expect(help?.name).toBe("poteto-help");
+    expect(help?.skillPath).toBe(
+      path.join(paths.pluginRoot, "skills", "poteto-help", "SKILL.md"),
+    );
+    expect(resolveSlashSkillPath("/not-a-real-skill please")).toBeUndefined();
+  });
+
+  test("slash skill invocation attaches that skill without dropping always-on poteto", () => {
+    const wrapped = wrapPromptWithAlwaysOnPoteto(
+      "/how explain the prompt wrapper",
+    );
+    expect(wrapped).toContain('<skill name="how"');
+    expect(wrapped).toContain('<skill name="poteto-mode"');
+    expect(wrapped).toContain("User task:");
+    expect(wrapped).toContain("/how explain the prompt wrapper");
+  });
+
+  test("slash poteto-mode does not attach the poteto skill twice", () => {
+    const wrapped = wrapPromptWithAlwaysOnPoteto("/poteto-mode fix the bug");
+    expect(wrapped.match(/<skill name="poteto-mode"/g)?.length).toBe(1);
+  });
+
+  test("local TUI commands stay local while plugin slashes are not local", () => {
+    expect(getSlashCommand("/help")).toBe("/help");
+    expect(getSlashCommand("/model")).toBe("/model");
+    expect(getSlashCommand("/poteto-help")).toBeUndefined();
+    expect(getSlashCommand("/how explain")).toBeUndefined();
   });
 
   test("loadPstackAgents includes poteto-agent", () => {
