@@ -1,0 +1,29 @@
+$ bun run scripts/live-playbook-route.ts
+04:47:47.724 INFO  LocalCursorRulesService load completed meta={durationMs: 32, ruleCount: 4}
+04:47:47.725 INFO  LocalCursorRulesService load completed meta={durationMs: 34, ruleCount: 4}
+04:47:47.739 INFO  AgentSkillsCursorRulesService load completed meta={durationMs: 47, ruleCount: 127, skillCount: 127, servedFromCache: false}
+status=finished
+durationMs=11050
+version=0.15.36
+settingSources=project
+expectedPlaybook=runtime-forensics.md
+toolNameCount=10
+toolReadCount=2
+playbookReadCount=2
+expectedPlaybookReadCount=2
+toolNames=["read","read","updateTodos","updateTodos","updateTodos","updateTodos","updateTodos","updateTodos","updateTodos","updateTodos"]
+toolReads=["/Users/josh-desktop/src/personal/lil-pstack/vendor/pstack/skills/poteto-mode/playbooks/runtime-forensics.md","/Users/josh-desktop/src/personal/lil-pstack/vendor/pstack/skills/poteto-mode/playbooks/runtime-forensics.md"]
+
+Matching this to Runtime forensics (idle-CPU spin, live instrumentation, diagnosis only). Opening that playbook and setting up todos with its steps verbatim.
+Updating the todo list with the playbook's verbatim steps.
+Your goal is a cited diagnosis of why OpenTUI’s scroll path keeps CPU busy when the terminal is idle. The problem is wasted cycles and possible battery drain without a proven hot path. This playbook does not ship a code change. The work product is live instrumentation evidence and a root-cause map, not a fix.
+
+**Playbook.** Runtime forensics in `vendor/pstack/skills/poteto-mode/playbooks/runtime-forensics.md`. Idle CPU spin with live instrumentation matches that playbook better than Bug fix (you asked for diagnosis first) or Perf issue (that playbook assumes a measured baseline and targets improvement).
+
+**Todos.** The five numbered steps from that file are on the list verbatim. Nothing is in progress yet per your stop instruction.
+
+**Next when you continue.** Step 1 is a real CPU profile on the spinning process via the matching control skill (CLI/TUI). Steps 2–4 narrow to the hot function, confirm the mechanism, and tie it to source. Step 5 is the read-only throughput checkpoint line only.
+
+Stopped here. No application source edits and no subagents, as requested. Say when to run step 1.
+
+LIVE_PASS
