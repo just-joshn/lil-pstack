@@ -35,3 +35,4 @@ ts	phase	decision	why	evidence	result
 2026-11-10T04:48:19Z	pr	opened PR 2 for live playbook-route harness	opening-a-pr after feature unit	https://github.com/just-joshn/lil-pstack/pull/2	open
 2026-11-10T04:50:19Z	start	session pickup after PR2 merge; continue found broken build scripts	user said PR merged continue; original pstack parity mostly done; build/compile pointed at missing cli.ts	https://github.com/just-joshn/lil-pstack/pull/2;main 92f5634	open
 2026-11-10T04:50:19Z	bug-fix	retarget build/compile to src/index.ts with --packages=external	cli.ts missing; OpenTUI optional platform imports fail when bundled	.audit/build-entry-fail.txt;.audit/build-entry-pass.txt	tests green
+2026-11-10T04:50:26Z	pr	opened PR 3 for build entrypoint fix	opening-a-pr after bug fix	https://github.com/just-joshn/lil-pstack/pull/3	open
