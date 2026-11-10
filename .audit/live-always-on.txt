@@ -1,0 +1,11 @@
+status=finished
+durationMs=8416
+version=0.15.36
+potetoSkillPath=/Users/josh-desktop/src/personal/lil-pstack/vendor/pstack/skills/poteto-mode/SKILL.md
+
+Tracing how `wrapPromptWithAlwaysOnPoteto` activates poteto-mode; searching the codebase.
+
+
+PLAYBOOK=investigation
+SLASH=no
+ACTIVE=poteto-mode

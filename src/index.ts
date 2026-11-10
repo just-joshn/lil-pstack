@@ -1,63 +1,67 @@
 #!/usr/bin/env bun
-import path from "node:path"
-import { CliRenderEvents, type CliRenderer, createCliRenderer } from "@opentui/core"
-import { createRoot } from "@opentui/react"
-import React from "react"
+import path from "node:path";
+import {
+  CliRenderEvents,
+  type CliRenderer,
+  createCliRenderer,
+} from "@opentui/core";
+import { createRoot } from "@opentui/react";
+import React from "react";
 
 import {
   CodingAgentSession,
   formatDuration,
   type AgentEvent,
-} from "./agent.js"
-import { App } from "./tui/App.js"
+} from "./agent.js";
+import { App } from "./tui/App.js";
 
 type CliOptions = {
-  cwd: string
-  force: boolean
-  help: boolean
-  model: string
-  prompt: string
-}
+  cwd: string;
+  force: boolean;
+  help: boolean;
+  model: string;
+  prompt: string;
+};
 
-const DEFAULT_MODEL = process.env.CURSOR_MODEL ?? "composer-2"
+const DEFAULT_MODEL = process.env.CURSOR_MODEL ?? "composer-2";
 
 async function main() {
-  const options = parseArgs(process.argv.slice(2))
+  const options = parseArgs(process.argv.slice(2));
 
   if (options.help) {
-    printHelp()
-    return
+    printHelp();
+    return;
   }
 
-  const apiKey = process.env.CURSOR_API_KEY
+  const apiKey = process.env.CURSOR_API_KEY;
   if (!apiKey) {
-    throw new Error("Set CURSOR_API_KEY before running the CLI.")
+    throw new Error("Set CURSOR_API_KEY before running the CLI.");
   }
 
   if (options.prompt) {
-    await runPlainPrompt(apiKey, options, options.prompt)
-    return
+    await runPlainPrompt(apiKey, options, options.prompt);
+    return;
   }
 
   if (!process.stdin.isTTY) {
-    const prompt = (await readStdin()).trim()
+    const prompt = (await readStdin()).trim();
     if (!prompt) {
-      throw new Error("No prompt provided on stdin.")
+      throw new Error("No prompt provided on stdin.");
     }
-    await runPlainPrompt(apiKey, options, prompt)
-    return
+    await runPlainPrompt(apiKey, options, prompt);
+    return;
   }
 
   if (!process.stdout.isTTY) {
-    throw new Error("Interactive mode requires a TTY stdout.")
+    throw new Error("Interactive mode requires a TTY stdout.");
   }
 
   const renderer = await createCliRenderer({
     exitOnCtrlC: false,
     maxFps: 30,
     screenMode: "alternate-screen",
-  })
-  const root = createRoot(renderer)
+  });
+  const root = createRoot(renderer);
 
   try {
     root.render(
@@ -66,71 +70,74 @@ async function main() {
         cwd: options.cwd,
         force: options.force,
         initialModel: { id: options.model },
-      })
-    )
-    await waitUntilDestroyed(renderer)
+      }),
+    );
+    await waitUntilDestroyed(renderer);
   } finally {
-    root.unmount()
+    root.unmount();
 
     if (!renderer.isDestroyed) {
-      renderer.destroy()
+      renderer.destroy();
     }
   }
 }
 
 function parseArgs(argv: string[]): CliOptions {
-  const promptParts: string[] = []
-  let cwd = process.cwd()
-  let force = false
-  let help = false
-  let model = DEFAULT_MODEL
+  const promptParts: string[] = [];
+  let cwd = process.cwd();
+  let force = false;
+  let help = false;
+  let model = DEFAULT_MODEL;
 
   for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index]
+    const arg = argv[index];
+    if (arg === undefined) {
+      continue;
+    }
 
     if (arg === "--") {
-      promptParts.push(...argv.slice(index + 1))
-      break
+      promptParts.push(...argv.slice(index + 1));
+      break;
     }
 
     if (arg === "--help" || arg === "-h") {
-      help = true
-      continue
+      help = true;
+      continue;
     }
 
     if (arg === "--force") {
-      force = true
-      continue
+      force = true;
+      continue;
     }
 
     if (arg === "--cwd" || arg === "-C") {
-      cwd = readOptionValue(argv, index, arg)
-      index += 1
-      continue
+      cwd = readOptionValue(argv, index, arg);
+      index += 1;
+      continue;
     }
 
     if (arg.startsWith("--cwd=")) {
-      cwd = arg.slice("--cwd=".length)
-      continue
+      cwd = arg.slice("--cwd=".length);
+      continue;
     }
 
     if (arg === "--model" || arg === "-m") {
-      model = readOptionValue(argv, index, arg)
-      index += 1
-      continue
+      model = readOptionValue(argv, index, arg);
+      index += 1;
+      continue;
     }
 
     if (arg.startsWith("--model=")) {
-      model = arg.slice("--model=".length)
-      continue
+      model = arg.slice("--model=".length);
+      continue;
     }
 
     if (arg.startsWith("-")) {
-      throw new Error(`Unknown option: ${arg}`)
+      throw new Error(`Unknown option: ${arg}`);
     }
 
-    promptParts.push(arg, ...argv.slice(index + 1))
-    break
+    promptParts.push(arg, ...argv.slice(index + 1));
+    break;
   }
 
   return {
@@ -139,121 +146,131 @@ function parseArgs(argv: string[]): CliOptions {
     help,
     model,
     prompt: promptParts.join(" ").trim(),
-  }
+  };
 }
 
 function readOptionValue(argv: string[], index: number, option: string) {
-  const value = argv[index + 1]
+  const value = argv[index + 1];
   if (!value || value.startsWith("-")) {
-    throw new Error(`Expected a value after ${option}.`)
+    throw new Error(`Expected a value after ${option}.`);
   }
-  return value
+  return value;
 }
 
 async function runPlainPrompt(
   apiKey: string,
   options: CliOptions,
-  prompt: string
+  prompt: string,
 ) {
   const session = new CodingAgentSession({
     apiKey,
     cwd: options.cwd,
     force: options.force,
     model: { id: options.model },
-  })
-  let assistantEndedWithNewline = true
+  });
+  let assistantEndedWithNewline = true;
 
   const annotate = (message: string) => {
     if (!assistantEndedWithNewline) {
-      process.stderr.write("\n")
+      process.stderr.write("\n");
     }
-    process.stderr.write(`${message}\n`)
-    assistantEndedWithNewline = true
-  }
+    process.stderr.write(`${message}\n`);
+    assistantEndedWithNewline = true;
+  };
 
   try {
     await session.sendPrompt({
       prompt,
       onEvent: (event) => {
         renderPlainEvent(event, annotate, (text) => {
-          process.stdout.write(text)
-          assistantEndedWithNewline = text.endsWith("\n")
-        })
+          process.stdout.write(text);
+          assistantEndedWithNewline = text.endsWith("\n");
+        });
       },
-    })
+    });
   } finally {
-    await session.dispose()
+    await session.dispose();
   }
 }
 
 function renderPlainEvent(
   event: AgentEvent,
   annotate: (message: string) => void,
-  writeAssistant: (text: string) => void
+  writeAssistant: (text: string) => void,
 ) {
   switch (event.type) {
     case "assistant_delta":
-      writeAssistant(event.text)
-      break
+      writeAssistant(event.text);
+      break;
     case "thinking": {
-      const text = compactText(event.text)
+      const text = compactText(event.text);
       if (text) {
-        annotate(`[thinking] ${text}`)
+        annotate(`[thinking] ${text}`);
       }
-      break
+      break;
     }
     case "tool":
-      annotate(`[tool] ${event.status} ${event.name}`)
-      break
+      annotate(`[tool] ${event.status} ${event.name}`);
+      break;
     case "status":
       if (event.status !== "FINISHED") {
-        annotate(`[status] ${event.status}${event.message ? ` ${event.message}` : ""}`)
+        annotate(
+          `[status] ${event.status}${event.message ? ` ${event.message}` : ""}`,
+        );
       }
-      break
+      break;
     case "task":
       if (event.text || event.status) {
-        annotate(`[task] ${compactText([event.status, event.text].filter(Boolean).join(" "))}`)
+        annotate(
+          `[task] ${compactText([event.status, event.text].filter(Boolean).join(" "))}`,
+        );
       }
-      break
+      break;
     case "result": {
       const details = [
         `status=${event.status}`,
-        event.durationMs ? `duration=${formatDuration(event.durationMs)}` : undefined,
-        event.usage?.inputTokens ? `input=${event.usage.inputTokens}` : undefined,
-        event.usage?.outputTokens ? `output=${event.usage.outputTokens}` : undefined,
-      ].filter(Boolean)
+        event.durationMs
+          ? `duration=${formatDuration(event.durationMs)}`
+          : undefined,
+        event.usage?.inputTokens
+          ? `input=${event.usage.inputTokens}`
+          : undefined,
+        event.usage?.outputTokens
+          ? `output=${event.usage.outputTokens}`
+          : undefined,
+      ].filter(Boolean);
 
-      annotate(`[done] ${details.join(" ")}`)
-      break
+      annotate(`[done] ${details.join(" ")}`);
+      break;
     }
     default:
-      break
+      break;
   }
 }
 
 function compactText(text: string) {
-  return text.replace(/\s+/g, " ").trim()
+  return text.replace(/\s+/g, " ").trim();
 }
 
 async function readStdin() {
-  let input = ""
-  process.stdin.setEncoding("utf8")
+  let input = "";
+  process.stdin.setEncoding("utf8");
 
   for await (const chunk of process.stdin) {
-    input += chunk
+    input += chunk;
   }
 
-  return input
+  return input;
 }
 
 function waitUntilDestroyed(renderer: CliRenderer) {
   if (renderer.isDestroyed) {
-    return Promise.resolve()
+    return Promise.resolve();
   }
 
   return new Promise<void>((resolve) => {
-    renderer.once(CliRenderEvents.DESTROY, () => resolve())
-  })
+    renderer.once(CliRenderEvents.DESTROY, () => resolve());
+  });
 }
 
 function printHelp() {
@@ -280,11 +297,11 @@ Examples:
   code-agent --cwd ../my-app "Add a regression test for the parser"
   code-agent
   printf "Review the recent changes" | code-agent
-`)
+`);
 }
 
 main().catch((error) => {
-  const message = error instanceof Error ? error.message : String(error)
-  console.error(`Error: ${message}`)
-  process.exitCode = 1
-})
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`Error: ${message}`);
+  process.exitCode = 1;
+});

@@ -1,0 +1,7 @@
+---
+description: lil-pstack always runs under poteto-mode
+alwaysApply: true
+---
+You are always under poteto-mode. Do not require a /poteto-mode slash.
+Read the poteto-mode SKILL.md before any work, including its inline Principles index. Use the absolute path from the session preamble.
+Follow that skill for the user task. Skills named by the user prompt still apply under this always-on poteto-mode.

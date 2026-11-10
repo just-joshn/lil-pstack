@@ -6,6 +6,7 @@
     "module": "Preserve",
     "moduleDetection": "force",
     "jsx": "react-jsx",
+    "jsxImportSource": "@opentui/react",
     "allowJs": true,
     "types": ["bun"],
 
@@ -26,5 +27,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "include": ["src/**/*", "tests/**/*", "scripts/**/*", "index.ts"],
+  "exclude": ["node_modules", "vendor", "dist"]
 }
