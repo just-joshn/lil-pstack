@@ -16,6 +16,7 @@
     "parity:pstack": "bun run scripts/parity-pstack.ts",
     "parity:pstack:live": "bun run scripts/live-always-on.ts",
     "parity:pstack:live-route": "bun run scripts/live-playbook-route.ts",
+    "parity:pstack:live-agent": "bun run scripts/live-poteto-agent.ts",
     "test": "bun test tests",
     "build": "bun build ./src/index.ts --target=bun --outdir=dist --packages=external",
     "compile": "bun build --compile ./src/index.ts --outfile dist/lil-pstack --packages=external"
