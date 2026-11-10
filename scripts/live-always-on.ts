@@ -1,8 +1,4 @@
 #!/usr/bin/env bun
-/**
- * Live proof that a plain-language prompt runs under always-on poteto-mode
- * without a slash command. Writes a short transcript artifact.
- */
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

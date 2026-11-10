@@ -1,9 +1,4 @@
 #!/usr/bin/env bun
-/**
- * Rerunnable pstack feature-parity checks for lil-pstack.
- * Compares the vendored plugin to the local Cursor source when present,
- * and checks the always-on poteto wiring that replaces /poteto-mode.
- */
 import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

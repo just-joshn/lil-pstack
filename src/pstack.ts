@@ -132,31 +132,24 @@ export function readSkillBlock(name: string, skillPath: string) {
 }
 
 function readVendorVersion(pluginRoot: string) {
-  const vendorPath = path.join(pluginRoot, "VENDOR.json");
-  if (existsSync(vendorPath)) {
-    try {
-      const vendor = JSON.parse(readFileSync(vendorPath, "utf8")) as {
-        version?: string;
-      };
-      if (vendor.version) {
-        return vendor.version;
-      }
-    } catch {
-      // fall through to plugin.json
-    }
-  }
+  return (
+    readJsonVersion(path.join(pluginRoot, "VENDOR.json")) ??
+    readJsonVersion(path.join(pluginRoot, "plugin.json")) ??
+    "unknown"
+  );
+}
 
-  const pluginPath = path.join(pluginRoot, "plugin.json");
-  if (!existsSync(pluginPath)) {
-    return "unknown";
+function readJsonVersion(filePath: string) {
+  if (!existsSync(filePath)) {
+    return undefined;
   }
   try {
-    const plugin = JSON.parse(readFileSync(pluginPath, "utf8")) as {
+    const data = JSON.parse(readFileSync(filePath, "utf8")) as {
       version?: string;
     };
-    return plugin.version ?? "unknown";
+    return data.version;
   } catch {
-    return "unknown";
+    return undefined;
   }
 }
 
