@@ -33,3 +33,5 @@ ts	phase	decision	why	evidence	result
 2026-11-10T04:48:04Z	pickup	main has hardened always-on; resume point is live playbook routing proof	session-pickup step 3; inherited claims re-ran green on HEAD	.audit/parity-pstack-main.txt;.audit/bun-check-main.txt	open
 2026-11-10T04:48:04Z	live-route	organic idle-CPU prompt caused Read of playbooks/runtime-forensics.md and updateTodos	close Attention gap that inject-only live gate did not prove routing	.audit/live-playbook-route.txt	LIVE_PASS
 2026-11-10T04:48:19Z	pr	opened PR 2 for live playbook-route harness	opening-a-pr after feature unit	https://github.com/just-joshn/lil-pstack/pull/2	open
+2026-11-10T04:50:19Z	start	session pickup after PR2 merge; continue found broken build scripts	user said PR merged continue; original pstack parity mostly done; build/compile pointed at missing cli.ts	https://github.com/just-joshn/lil-pstack/pull/2;main 92f5634	open
+2026-11-10T04:50:19Z	bug-fix	retarget build/compile to src/index.ts with --packages=external	cli.ts missing; OpenTUI optional platform imports fail when bundled	.audit/build-entry-fail.txt;.audit/build-entry-pass.txt	tests green
