@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { existsSync, readdirSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { buildPrompt } from "../src/agent.ts";

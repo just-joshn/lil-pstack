@@ -28,6 +28,6 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["src/**/*", "tests/**/*", "scripts/**/*", "index.ts"],
+  "include": ["src/**/*", "tests/**/*", "scripts/**/*", "index.ts", "vitest.config.ts"],
   "exclude": ["node_modules", "vendor", "dist"]
 }
