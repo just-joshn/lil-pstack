@@ -49,16 +49,12 @@ describe("package entrypoints", () => {
     expect(missing).toEqual([]);
   });
 
-  test(
-    "bun run build exits 0",
-    () => {
-      const result = spawnSync("bun", ["run", "build"], {
-        cwd: repoRoot,
-        encoding: "utf8",
-      });
-      expect(result.status).toBe(0);
-      expect(existsSync(path.join(repoRoot, "dist", "index.js"))).toBe(true);
-    },
-    60_000,
-  );
+  test("bun run build exits 0", () => {
+    const result = spawnSync("bun", ["run", "build"], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    expect(result.status).toBe(0);
+    expect(existsSync(path.join(repoRoot, "dist", "index.js"))).toBe(true);
+  }, 60_000);
 });
