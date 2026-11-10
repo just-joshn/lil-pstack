@@ -352,6 +352,38 @@ describe("runCli", () => {
     expect(harness.read().stderr).toBe("Error: renderer failed\n");
   });
 
+  test("a hole in argv is skipped and an unknown event is ignored", async () => {
+    const harness = fakeCliIo({
+      stdinIsTTY: true,
+      stdoutIsTTY: true,
+      onSend: (_prompt, onEvent) => {
+        onEvent({ type: "nope" } as unknown as AgentEvent);
+      },
+    });
+    const argv: string[] = ["--help"];
+    argv[1] = undefined as unknown as string;
+
+    const helped = await runCli(argv, {}, harness.io);
+    expect(helped.exitCode).toBe(0);
+    expect(harness.read().stdout).toBe(HELP_STDOUT);
+
+    const plain = fakeCliIo({
+      stdinIsTTY: true,
+      stdoutIsTTY: true,
+      onSend: (_prompt, onEvent) => {
+        onEvent({ type: "nope" } as unknown as AgentEvent);
+      },
+    });
+    const result = await runCli(
+      ["fix"],
+      { CURSOR_API_KEY: "cursor_test" },
+      plain.io,
+    );
+    expect(result.exitCode).toBe(0);
+    expect(plain.read().stdout).toBe("");
+    expect(plain.read().stderr).toBe("");
+  });
+
   test("plain mode writes assistant text and annotates the other events", async () => {
     const harness = fakeCliIo({
       stdinIsTTY: true,

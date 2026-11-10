@@ -723,4 +723,106 @@ describe("CodingAgentSession", () => {
       },
     ]);
   });
+
+  test("a cloud session resolves the target before an agent is open", () => {
+    const harness = createHarness({
+      git: (_cwd, args) =>
+        args[0] === "config" ? "git@github.com:acme/widgets.git" : "HEAD",
+    });
+    const session = createSession(harness, { executionMode: "cloud" });
+    expect(session.executionTarget).toBe("https://github.com/acme/widgets");
+  });
+
+  test("catalog labels drop a normalized duplicate and match parameter names", async () => {
+    const models: SDKModel[] = [
+      {
+        id: "bare",
+        displayName: "",
+        variants: [
+          { displayName: "Fast", params: [{ id: "s", value: "fast" }] },
+        ],
+      },
+      { id: "Ab", displayName: "Dup" },
+      { id: "a-b", displayName: "Dup" },
+      { id: "Composer", displayName: "Composer" },
+      { id: "Other", displayName: "Composer" },
+      {
+        id: "gpt",
+        displayName: "GPT",
+        parameters: [
+          {
+            id: "speed",
+            displayName: "Fast",
+            values: [
+              { value: "fast", displayName: "fast" },
+              { value: "slow", displayName: "Slow" },
+            ],
+          },
+        ],
+        variants: [
+          { displayName: "Opt", params: [{ id: "speed", value: "fast" }] },
+          { displayName: "Opt", params: [{ id: "speed", value: "slow" }] },
+        ],
+      },
+    ];
+    const harness = createHarness({ models });
+    const labels = (await createSession(harness).listModels()).map(
+      (choice) => choice.label,
+    );
+    expect(labels).toEqual([
+      "bare - Fast",
+      "Dup - Ab",
+      "Composer",
+      "Composer - Other",
+      "GPT - Opt - fast",
+      "GPT - Opt - Fast: Slow",
+    ]);
+  });
+
+  test("null and empty tool args produce no summary", async () => {
+    const messages: SDKMessage[] = [
+      {
+        type: "tool_call",
+        agent_id: "a",
+        run_id: "r",
+        call_id: "n",
+        name: "read",
+        status: "completed",
+        args: null,
+      },
+      {
+        type: "tool_call",
+        agent_id: "a",
+        run_id: "r",
+        call_id: "e",
+        name: "read",
+        status: "completed",
+        args: { path: ["", "   "] },
+      },
+    ];
+    const harness = createHarness({
+      run: createRun({ messages, status: "finished" }),
+    });
+    const events: AgentEvent[] = [];
+    await createSession(harness).sendPrompt({
+      prompt: "look",
+      onEvent: (event) => events.push(event),
+    });
+    expect(events.filter((event) => event.type === "tool")).toEqual([
+      {
+        type: "tool",
+        callId: "n",
+        name: "read",
+        params: undefined,
+        status: "completed",
+      },
+      {
+        type: "tool",
+        callId: "e",
+        name: "read",
+        params: undefined,
+        status: "completed",
+      },
+    ]);
+  });
 });

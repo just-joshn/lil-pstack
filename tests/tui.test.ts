@@ -340,6 +340,146 @@ describe("reduceTui", () => {
   });
 });
 
+test("result actions and a second assistant chunk update the screen", () => {
+  const sent = reduceTui(boot(), { type: "submit", value: "fix" });
+  const runId =
+    sent.effects[0]?.type === "send-prompt" ? sent.effects[0].runId : 0;
+  let step = reduceTui(sent.state, {
+    type: "agent-event",
+    runId,
+    event: { type: "assistant_delta", text: "hello" },
+  });
+  step = reduceTui(step.state, {
+    type: "agent-event",
+    runId,
+    event: { type: "assistant_delta", text: " there" },
+  });
+  step = reduceTui(step.state, {
+    type: "agent-event",
+    runId,
+    event: { type: "assistant_delta", text: "" },
+  });
+  step = reduceTui(step.state, {
+    type: "agent-event",
+    runId,
+    event: { type: "thinking", text: "first" },
+  });
+  step = reduceTui(step.state, {
+    type: "agent-event",
+    runId,
+    event: { type: "thinking", text: "second" },
+  });
+  step = reduceTui(step.state, {
+    type: "agent-event",
+    runId,
+    event: { type: "tool", name: "write", status: "completed" },
+  });
+  step = reduceTui(step.state, {
+    type: "agent-event",
+    runId,
+    event: { type: "status", status: "CANCELLED" },
+  });
+  expect(textOf(step)).toContain("cancelled");
+  step = reduceTui(step.state, {
+    type: "agent-event",
+    runId,
+    event: { type: "status", status: "EXPIRED", message: "stale" },
+  });
+  step = reduceTui(step.state, {
+    type: "resize",
+    columns: 20,
+    rows: 24,
+  });
+  step = reduceTui(step.state, {
+    type: "agent-event",
+    runId,
+    event: {
+      type: "assistant_delta",
+      text: `\n\`\`\`\n${"x".repeat(80)}\n\`\`\``,
+    },
+  });
+  const painted = textOf(step);
+  expect(painted).toContain("hello there");
+  expect(painted).toContain("second");
+  expect(painted).toContain("[E] write");
+  expect(painted).not.toContain("cancelled");
+  expect(painted).toContain("expired stale");
+  expect(painted).toContain("--- code");
+  expect(painted).toContain("| ");
+
+  const picked = reduceTui(
+    reduceTui(boot(), {
+      type: "models-loaded",
+      choices: [{ label: "Composer", value: { id: "composer-2" } }],
+    }).state,
+    { type: "select-model", pick: { id: "composer-2" } },
+  );
+  expect(picked.effects.map((effect) => effect.type)).toEqual(["set-model"]);
+  expect(
+    reduceTui(picked.state, {
+      type: "select-model",
+      pick: { id: 1 } as unknown as { id: string },
+    }).effects,
+  ).toEqual([]);
+
+  expect(
+    reduceTui(sent.state, {
+      type: "select-command",
+      name: "/exit",
+    }).effects.map((effect) => effect.type),
+  ).toEqual(["exit"]);
+  const idle = reduceTui(boot(), { type: "select-command", name: "/exit" });
+  expect(idle.effects.map((effect) => effect.type)).toEqual(["exit"]);
+  expect(
+    reduceTui(sent.state, { type: "input", value: "/help" }).state.mode,
+  ).toBe("input");
+  expect(
+    reduceTui(sent.state, { type: "submit", value: "/reset" }).effects,
+  ).toEqual([]);
+
+  const switched = reduceTui(boot(), {
+    type: "mode-switched",
+    mode: "cloud",
+    target: "https://github.com/acme/widgets#main",
+  });
+  expect(textOf(switched).replaceAll(/\s+/g, " ")).toContain(
+    "Switched to cloud execution. Target: https://github.com/acme/widgets#main.",
+  );
+  expect(
+    textOf(
+      reduceTui(boot(), { type: "mode-switch-failed", message: "cloud down" }),
+    ),
+  ).toContain("cloud down");
+  expect(
+    textOf(reduceTui(boot(), { type: "models-failed", message: "no catalog" })),
+  ).toContain("no catalog");
+  const reset = reduceTui(
+    reduceTui(boot(), {
+      type: "agent-event",
+      runId: 1,
+      event: { type: "assistant_delta", text: "keep" },
+    }).state,
+    { type: "reset-done" },
+  );
+  expect(reset.state.transcript).toEqual([]);
+  expect(
+    textOf(reduceTui(boot(), { type: "reset-failed", message: "reset down" })),
+  ).toContain("reset down");
+  const cancelled = reduceTui(sent.state, {
+    type: "cancel-result",
+    result: { cancelled: true },
+  });
+  expect(textOf(cancelled)).toContain("Cancellation requested.");
+  expect(
+    textOf(
+      reduceTui(sent.state, { type: "cancel-failed", message: "cancel down" }),
+    ),
+  ).toContain("cancel down");
+  expect(reduceTui(sent.state, { type: "run-finished" }).state.busy).toBe(
+    false,
+  );
+});
+
 describe("performEffect", () => {
   function createRun(messages: SDKMessage[] = []): AgentRun {
     return {

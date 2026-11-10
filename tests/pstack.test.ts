@@ -1,11 +1,21 @@
-import { describe, expect, test } from "vitest";
-import { existsSync, readdirSync, realpathSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
+import { afterEach, describe, expect, test } from "vitest";
 import { buildPrompt } from "../src/agent.ts";
 import { getSlashCommand } from "../src/commands.ts";
 import {
   loadPstackAgents,
   pstackLocalOptions,
+  readSkillBlock,
   resolvePstackPaths,
   resolveSlashSkillPath,
   wrapPromptWithAlwaysOnPoteto,
@@ -132,5 +142,111 @@ describe("vendored pstack", () => {
     );
     const files = readdirSync(playbooks).filter((name) => name.endsWith(".md"));
     expect(files.length).toBe(23);
+  });
+});
+
+describe("pstack paths outside the vendored tree", () => {
+  const roots: string[] = [];
+
+  afterEach(() => {
+    for (const root of roots.splice(0)) {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  function tempRepo() {
+    const root = mkdtempSync(path.join(tmpdir(), "lil-pstack-"));
+    roots.push(root);
+    return root;
+  }
+
+  test("a repo without the vendor tree has no agents and an unknown version", () => {
+    const root = tempRepo();
+    const paths = resolvePstackPaths(root);
+    expect(paths.version).toBe("unknown");
+    expect(loadPstackAgents(root)).toEqual({});
+    expect(pstackLocalOptions("/tmp/work", root).dirs).toEqual([
+      path.resolve("/tmp/work"),
+    ]);
+    expect(
+      readSkillBlock("poteto-mode", paths.potetoSkillPath),
+    ).toBeUndefined();
+    expect(
+      wrapPromptWithAlwaysOnPoteto("fix it", paths.potetoSkillPath),
+    ).toContain(`Read and follow poteto-mode at: ${paths.potetoSkillPath}`);
+  });
+
+  test("version falls back from VENDOR.json to plugin.json to unknown", () => {
+    const vendor = tempRepo();
+    const plugin = path.join(vendor, "vendor", "pstack");
+    mkdirSync(plugin, { recursive: true });
+    expect(resolvePstackPaths(vendor).version).toBe("unknown");
+
+    writeFileSync(path.join(plugin, "plugin.json"), "{");
+    expect(resolvePstackPaths(vendor).version).toBe("unknown");
+
+    writeFileSync(
+      path.join(plugin, "plugin.json"),
+      JSON.stringify({ version: "1.2.3" }),
+    );
+    expect(resolvePstackPaths(vendor).version).toBe("1.2.3");
+
+    writeFileSync(
+      path.join(plugin, "VENDOR.json"),
+      JSON.stringify({ version: "9.9.9" }),
+    );
+    expect(resolvePstackPaths(vendor).version).toBe("9.9.9");
+  });
+
+  test("agent files without a usable frontmatter are skipped", () => {
+    const root = tempRepo();
+    const agents = path.join(root, "vendor", "pstack", "agents");
+    mkdirSync(agents, { recursive: true });
+    writeFileSync(path.join(agents, "notes.txt"), "ignore");
+    writeFileSync(path.join(agents, "plain.md"), "no frontmatter");
+    writeFileSync(
+      path.join(agents, "broken.md"),
+      "---\nname: only-name\n---\nbody\n",
+    );
+    writeFileSync(
+      path.join(agents, "empty.md"),
+      "---\nname: empty\ndescription: blank\n---\n",
+    );
+    writeFileSync(
+      path.join(agents, "ready.md"),
+      "---\nname: \"ready\"\ndescription: 'does work'\n---\nDo the work.\n",
+    );
+
+    expect(loadPstackAgents(root)).toEqual({
+      ready: { description: "does work", prompt: "Do the work." },
+    });
+  });
+
+  test("a skill file without a body or a closing frontmatter is not injected", () => {
+    const root = tempRepo();
+    const skill = path.join(root, "SKILL.md");
+    writeFileSync(skill, "---\nname: poteto-mode\n---\n");
+    expect(readSkillBlock("poteto-mode", skill)).toBeUndefined();
+    expect(wrapPromptWithAlwaysOnPoteto("task", skill)).toContain(
+      "Read and follow poteto-mode",
+    );
+
+    writeFileSync(skill, "---\nname: poteto-mode\n");
+    expect(readSkillBlock("poteto-mode", skill)).toContain(
+      "---\nname: poteto-mode",
+    );
+
+    writeFileSync(skill, "Follow the playbook.\n");
+    const block = readSkillBlock("poteto-mode", skill);
+    expect(block).toContain("Follow the playbook.");
+    expect(block).toContain('<skill name="poteto-mode"');
+  });
+
+  test("local options omit the host directory when the workspace is the host", () => {
+    const root = tempRepo();
+    const host = path.join(root, "vendor", "pstack-host");
+    mkdirSync(host, { recursive: true });
+    const options = pstackLocalOptions(host, root);
+    expect(options.dirs).toEqual([path.resolve(host)]);
   });
 });
