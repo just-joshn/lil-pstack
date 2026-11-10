@@ -1,7 +1,8 @@
-import { describe, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { describe, expect, test } from "vitest";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -49,14 +50,11 @@ describe("package entrypoints", () => {
   });
 
   test("bun run build exits 0", () => {
-    const result = Bun.spawnSync(["bun", "run", "build"], {
+    const result = spawnSync("bun", ["run", "build"], {
       cwd: repoRoot,
-      stdout: "pipe",
-      stderr: "pipe",
+      encoding: "utf8",
     });
-    expect(result.exitCode).toBe(0);
-    expect(
-      existsSync(path.join(repoRoot, "dist", "index.js")),
-    ).toBe(true);
-  });
+    expect(result.status).toBe(0);
+    expect(existsSync(path.join(repoRoot, "dist", "index.js"))).toBe(true);
+  }, 60_000);
 });

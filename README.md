@@ -28,7 +28,7 @@ bun run src/index.ts -- "fix the flaky test"
 ```bash
 bun check
 bun fmt
-bun test
+bun run test
 bun run parity:pstack
 ```
 

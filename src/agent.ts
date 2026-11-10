@@ -1,12 +1,8 @@
-import { execFileSync } from "node:child_process";
-import {
-  Agent,
-  Cursor,
-  type ModelSelection,
-  type Run,
-  type SDKAgent,
-  type SDKMessage,
-  type SDKModel,
+import type {
+  ModelSelection,
+  SDKMessage,
+  SDKModel,
+  SettingSource,
 } from "@cursor/sdk";
 import {
   loadPstackAgents,
@@ -42,9 +38,46 @@ export type TokenUsage = {
 
 export type ExecutionMode = "cloud" | "local";
 
-type CloudRepository = {
+export type CloudRepository = {
   url: string;
   startingRef?: string;
+};
+
+export type OpenAgentSpec = {
+  apiKey: string;
+  name: string;
+  model: ModelSelection;
+  agents: Record<string, { description: string; prompt: string }>;
+  place:
+    | {
+        kind: "local";
+        cwd?: string;
+        dirs?: string[];
+        settingSources?: SettingSource[];
+      }
+    | { kind: "cloud"; repository: CloudRepository };
+};
+
+export type AgentRun = {
+  stream(): AsyncIterable<SDKMessage>;
+  wait(): Promise<{ status: string; durationMs?: number; usage?: TokenUsage }>;
+  supports(capability: "cancel"): boolean;
+  unsupportedReason(capability: "cancel"): string | undefined;
+  cancel(): Promise<void>;
+};
+
+export type AgentClient = {
+  send(
+    prompt: string,
+    request: { model?: ModelSelection; force: boolean },
+  ): Promise<AgentRun>;
+  dispose(): Promise<void>;
+};
+
+export type AgentPorts = {
+  listModels(apiKey: string): Promise<SDKModel[]>;
+  openAgent(spec: OpenAgentSpec): Promise<AgentClient>;
+  git(cwd: string, args: string[]): string | undefined;
 };
 
 type CodingAgentSessionOptions = {
@@ -53,6 +86,7 @@ type CodingAgentSessionOptions = {
   model: ModelSelection;
   force: boolean;
   executionMode?: ExecutionMode;
+  ports: AgentPorts;
 };
 
 type SendPromptOptions = {
@@ -72,13 +106,14 @@ const AGENT_INSTRUCTIONS = [
 ].join("\n");
 
 export class CodingAgentSession {
-  private agent: SDKAgent | null = null;
+  private agent: AgentClient | null = null;
   private agentKey = "";
   private cloudRepository: CloudRepository | null = null;
-  private currentRun: Run | null = null;
+  private currentRun: AgentRun | null = null;
   private readonly apiKey: string;
   private readonly cwd: string;
   private readonly force: boolean;
+  private readonly ports: AgentPorts;
   private mode: ExecutionMode;
   private modelSelection: ModelSelection;
 
@@ -86,6 +121,7 @@ export class CodingAgentSession {
     this.apiKey = options.apiKey;
     this.cwd = options.cwd;
     this.force = options.force;
+    this.ports = options.ports;
     this.mode = options.executionMode ?? "local";
     this.modelSelection = options.model;
     this.agentKey = this.currentAgentKey();
@@ -103,7 +139,7 @@ export class CodingAgentSession {
     return this.mode === "local"
       ? this.cwd
       : formatCloudRepository(
-          this.cloudRepository ?? detectCloudRepository(this.cwd),
+          this.cloudRepository ?? this.detectCloudRepository(),
         );
   }
 
@@ -112,7 +148,7 @@ export class CodingAgentSession {
   }
 
   async listModels(): Promise<ModelChoice[]> {
-    const models = await Cursor.models.list({ apiKey: this.apiKey });
+    const models = await this.ports.listModels(this.apiKey);
     const choices = disambiguateGlobalDuplicateLabels(
       dedupeModelChoices(models.flatMap(modelToChoices)),
     );
@@ -153,7 +189,7 @@ export class CodingAgentSession {
       return;
     }
 
-    await this.agent[Symbol.asyncDispose]();
+    await this.agent.dispose();
     this.agent = null;
   }
 
@@ -181,9 +217,7 @@ export class CodingAgentSession {
 
     const run = await agent.send(buildPrompt(prompt), {
       ...(this.mode === "local" ? { model: this.modelSelection } : {}),
-      ...(this.mode === "local" && this.force
-        ? { local: { force: true } }
-        : {}),
+      force: this.mode === "local" && this.force,
     });
 
     this.currentRun = run;
@@ -209,31 +243,35 @@ export class CodingAgentSession {
   }
 
   private createAgent() {
-    const pstackAgents = loadPstackAgents();
+    const agents = loadPstackAgents();
     const options = {
       apiKey: this.apiKey,
       name: "lil-pstack",
       model: this.modelSelection,
-      agents: pstackAgents,
+      agents,
     };
 
     if (this.mode === "cloud") {
-      const repository = detectCloudRepository(this.cwd);
+      const repository = this.detectCloudRepository();
       this.cloudRepository = repository;
 
-      return Agent.create({
+      return this.ports.openAgent({
         ...options,
-        cloud: {
-          repos: [repository],
-        },
+        place: { kind: "cloud", repository },
       });
     }
 
     this.cloudRepository = null;
+    const local = pstackLocalOptions(this.cwd);
 
-    return Agent.create({
+    return this.ports.openAgent({
       ...options,
-      local: pstackLocalOptions(this.cwd),
+      place: {
+        kind: "local",
+        cwd: local.cwd,
+        dirs: local.dirs,
+        settingSources: local.settingSources,
+      },
     });
   }
 
@@ -257,8 +295,22 @@ export class CodingAgentSession {
     this.agentKey = this.currentAgentKey();
 
     if (previousAgent) {
-      await previousAgent[Symbol.asyncDispose]();
+      await previousAgent.dispose();
     }
+  }
+
+  private detectCloudRepository() {
+    const remote = this.ports.git(this.cwd, [
+      "config",
+      "--get",
+      "remote.origin.url",
+    ]);
+    const branch = this.ports.git(this.cwd, [
+      "rev-parse",
+      "--abbrev-ref",
+      "HEAD",
+    ]);
+    return resolveCloudRepository(remote, branch);
   }
 
   private currentAgentKey() {
@@ -424,9 +476,10 @@ function modelSelectionKey(selection: ModelSelection) {
   return params ? `${selection.id}?${params}` : selection.id;
 }
 
-function detectCloudRepository(cwd: string): CloudRepository {
-  const remote = runGit(cwd, ["config", "--get", "remote.origin.url"]);
-
+function resolveCloudRepository(
+  remote: string | undefined,
+  branch: string | undefined,
+): CloudRepository {
   if (!remote) {
     throw new Error(
       "Cloud mode requires a git repository with remote.origin.url set.",
@@ -441,21 +494,8 @@ function detectCloudRepository(cwd: string): CloudRepository {
     );
   }
 
-  const branch = runGit(cwd, ["rev-parse", "--abbrev-ref", "HEAD"]);
   const startingRef = branch && branch !== "HEAD" ? branch : undefined;
-
   return startingRef ? { url, startingRef } : { url };
-}
-
-function runGit(cwd: string, args: string[]) {
-  try {
-    return execFileSync("git", ["-C", cwd, ...args], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-  } catch {
-    return undefined;
-  }
 }
 
 function normalizeGitHubRemote(remote: string) {
