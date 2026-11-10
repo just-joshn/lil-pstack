@@ -43,3 +43,4 @@ ts	phase	decision	why	evidence	result
 2026-11-10T05:00:30Z	arena	picked stream-observer base; graft poteto-agent preflight only	cross-judge 10 vs 6; laziness; matches HOW gap	9168824f-bf94-4fc3-a955-bbae905aa615;/tmp/arena-live-poteto-agent/judge.md;/tmp/arena-live-poteto-agent/SYNTHESIS.md	open
 2026-11-10T05:05:00Z	verify	live-agent FAIL launchCount=0; dump shows subagentType object shape	attack-the-premise; string-only parser wrong	.audit/live-poteto-agent.txt;/tmp/arena-live-poteto-agent/event-dump.jsonl	LIVE_FAIL
 2026-11-10T05:07:30Z	verify	live-agent PASS after object subagentType parse; potetoAgentLaunchCount=9	prove-it-works; attack-the-premise fix	.audit/live-poteto-agent.txt;LIVE_PASS	VERIFIED
+2026-11-10T05:08:30Z	pr	opened PR 4 for live poteto-agent harness	opening-a-pr after Feature unit	https://github.com/just-joshn/lil-pstack/pull/4	open
