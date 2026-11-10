@@ -21,3 +21,6 @@ ts	phase	decision	why	evidence	result
 2026-11-10T04:31:29Z	live	plain NL send matched PLAYBOOK=investigation SLASH=no ACTIVE=poteto-mode	prove always-on poteto routes a read-only question without slash	.audit/live-always-on.txt	LIVE_PASS
 2026-11-10T04:31:29Z	verify	bun check green; bun test 9 pass; parity 23/23; live pass	whole predicate on real artifacts	/tmp/lil-pstack-test2.txt;/tmp/lil-pstack-live-always-on.txt	VERIFIED
 2026-11-10T04:31:48Z	deps	added THIRD_PARTY_NOTICES for vendored pstack MIT; dropped missing LICENSE from package files	vendored MIT plugin needs attribution; package.files pointed at absent LICENSE	THIRD_PARTY_NOTICES.md;package.json	open
+2026-11-10T04:32:00Z	pr	opened feat/always-on-pstack PR with always-on pstack vendor and parity harness	opening-a-pr end of figure-it-out; forge gh	pending-url	open
+2026-11-10T04:32:05Z	pr	PR 1 opened for always-on pstack	supersedes prior pr row that lacked the URL	https://github.com/just-joshn/lil-pstack/pull/1	open
+2026-11-10T04:32:05Z	handback	predicate VERIFIED on parity harness and live NL send; PR open	phase E closeout	https://github.com/just-joshn/lil-pstack/pull/1;.audit/live-always-on.txt	VERIFIED
