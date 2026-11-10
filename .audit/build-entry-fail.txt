@@ -1,0 +1,28 @@
+bun test v1.4.4 (38afee6c8)
+
+tests/package-scripts.test.ts:
+43 |       if (!existsSync(resolved)) {
+44 |         missing.push(`${name}:${entry}`);
+45 |       }
+46 |     }
+47 | 
+48 |     expect(missing).toEqual([]);
+                         ^
+error: expect(received).toEqual(expected)
+
+- []
++ [
++   "build:./src/cli.ts",
++   "compile:./src/cli.ts",
++ ]
+
+- Expected  - 1
++ Received  + 4
+
+      at <anonymous> (/Users/josh-desktop/src/personal/lil-pstack/tests/package-scripts.test.ts:48:21)
+(fail) package entrypoints > bin and build scripts point at files that exist [2.80ms]
+
+ 0 pass
+ 1 fail
+ 5 expect() calls
+Ran 1 test across 1 file. [7.00ms]
