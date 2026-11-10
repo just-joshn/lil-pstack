@@ -271,11 +271,11 @@ export class CodingAgentSession {
 }
 
 export function buildPrompt(prompt: string) {
-  const { potetoSkillPath } = resolvePstackPaths();
+  const paths = resolvePstackPaths();
   return [
     AGENT_INSTRUCTIONS,
     "",
-    wrapPromptWithAlwaysOnPoteto(prompt, potetoSkillPath),
+    wrapPromptWithAlwaysOnPoteto(prompt, paths.potetoSkillPath),
   ].join("\n");
 }
 

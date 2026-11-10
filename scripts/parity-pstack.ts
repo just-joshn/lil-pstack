@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   loadPstackAgents,
   resolvePstackPaths,
+  resolveSlashSkillPath,
   wrapPromptWithAlwaysOnPoteto,
 } from "../src/pstack.ts";
 
@@ -319,6 +320,29 @@ function main() {
       "always-on-absolute-path",
       wrapped.includes(paths.potetoSkillPath),
       paths.potetoSkillPath,
+    ),
+  );
+
+  const slashHelp = resolveSlashSkillPath("/poteto-help", repoRoot);
+  const slashWrapped = wrapPromptWithAlwaysOnPoteto(
+    "/how explain the wrapper",
+    paths.potetoSkillPath,
+    repoRoot,
+  );
+  checks.push(
+    check(
+      "slash-skill-resolve",
+      slashHelp?.name === "poteto-help",
+      slashHelp?.skillPath ?? "missing",
+    ),
+  );
+  checks.push(
+    check(
+      "slash-skill-attach",
+      slashWrapped.includes('<skill name="how"') &&
+        slashWrapped.includes('<skill name="poteto-mode"') &&
+        (slashWrapped.match(/<skill name="poteto-mode"/g)?.length ?? 0) === 1,
+      "explicit slash skill plus always-on poteto",
     ),
   );
 

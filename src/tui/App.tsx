@@ -260,7 +260,11 @@ export function App({ apiKey, cwd, force, initialModel }: TuiAppProps) {
     }
 
     if (prompt.startsWith("/")) {
-      void runCommand(prompt);
+      if (getSlashCommand(prompt)) {
+        void runCommand(prompt);
+        return;
+      }
+      void sendPrompt(prompt);
       return;
     }
 
@@ -294,11 +298,7 @@ export function App({ apiKey, cwd, force, initialModel }: TuiAppProps) {
         exitApp();
         break;
       default:
-        addEntry(
-          "error",
-          "command",
-          `Unknown command: ${rawCommand}. Type /help.`,
-        );
+        void sendPrompt(rawCommand);
         break;
     }
   };

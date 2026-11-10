@@ -92,17 +92,59 @@ export function loadPstackAgents(
   return agents;
 }
 
+export function resolveSlashSkillName(prompt: string) {
+  const match = prompt.trim().match(/^\/([A-Za-z0-9][\w-]*)(?:\s|$)/);
+  return match?.[1];
+}
+
+export function resolveSlashSkillPath(
+  prompt: string,
+  repoRoot = PACKAGE_ROOT,
+) {
+  const name = resolveSlashSkillName(prompt);
+  if (!name) {
+    return undefined;
+  }
+  const skillPath = path.join(
+    resolvePstackPaths(repoRoot).pluginRoot,
+    "skills",
+    name,
+    "SKILL.md",
+  );
+  if (!existsSync(skillPath)) {
+    return undefined;
+  }
+  return { name, skillPath };
+}
+
 export function wrapPromptWithAlwaysOnPoteto(
   userPrompt: string,
   potetoSkillPath = resolvePstackPaths().potetoSkillPath,
+  repoRoot = PACKAGE_ROOT,
 ) {
   const skill = readSkillBlock("poteto-mode", potetoSkillPath);
+  const slashSkill = resolveSlashSkillPath(userPrompt, repoRoot);
   const parts = [
     "pstack poteto-mode is always on for this session. A slash command is not required.",
     "Treat the user task below as a /poteto-mode invocation.",
     "Match a playbook, open its todos, and read other pstack skills as poteto-mode directs.",
     `Put this absolute path in every poteto-agent Task prompt: ${potetoSkillPath}`,
   ];
+
+  if (
+    slashSkill &&
+    slashSkill.name !== "poteto-mode" &&
+    slashSkill.skillPath !== potetoSkillPath
+  ) {
+    const attached = readSkillBlock(slashSkill.name, slashSkill.skillPath);
+    if (attached) {
+      parts.push(
+        "",
+        `The user invoked /${slashSkill.name}. Attach and follow that skill for this turn.`,
+        attached,
+      );
+    }
+  }
 
   if (skill) {
     parts.push("", skill);

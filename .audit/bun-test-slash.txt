@@ -1,0 +1,20 @@
+bun test v1.4.4 (38afee6c8)
+
+tests/pstack.test.ts:
+(pass) vendored pstack > plugin and poteto skill exist [0.33ms]
+(pass) vendored pstack > host skill symlink resolves to vendored poteto-mode [0.08ms]
+(pass) vendored pstack > local options mount the pstack host workspace [0.07ms]
+(pass) vendored pstack > always-on wrapper injects poteto skill body without requiring a slash [0.38ms]
+(pass) vendored pstack > buildPrompt keeps always-on poteto on every send [0.24ms]
+(pass) vendored pstack > slash skill names resolve to vendored SKILL.md files [0.09ms]
+(pass) vendored pstack > slash skill invocation attaches that skill without dropping always-on poteto [0.28ms]
+(pass) vendored pstack > slash poteto-mode does not attach the poteto skill twice [0.10ms]
+(pass) vendored pstack > local TUI commands stay local while plugin slashes are not local [0.03ms]
+(pass) vendored pstack > loadPstackAgents includes poteto-agent [0.40ms]
+(pass) vendored pstack > host exposes every vendored skill and both agents [0.32ms]
+(pass) vendored pstack > poteto-mode ships all 23 playbooks [0.07ms]
+
+ 12 pass
+ 0 fail
+ 96 expect() calls
+Ran 12 tests across 1 file. [238.00ms]

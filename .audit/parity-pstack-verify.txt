@@ -1,0 +1,30 @@
+$ bun run scripts/parity-pstack.ts
+PASS	vendor-plugin-json	/Users/josh-desktop/src/personal/lil-pstack/vendor/pstack
+PASS	poteto-skill	/Users/josh-desktop/src/personal/lil-pstack/vendor/pstack/skills/poteto-mode/SKILL.md
+PASS	vendor-version	0.15.36
+PASS	skill-count	58 skills (vendored plugin only; not CursorPluginsAgentSkillsService)
+PASS	playbook-count	23/23
+PASS	agent-poteto-agent	comment-sicko,poteto-agent
+PASS	agent-comment-sicko	comment-sicko,poteto-agent
+PASS	host-skills-dir	/Users/josh-desktop/src/personal/lil-pstack/vendor/pstack-host/.cursor/skills
+PASS	host-agents-dir	/Users/josh-desktop/src/personal/lil-pstack/vendor/pstack-host/.cursor/agents
+PASS	host-no-always-on-rule	always-on is prompt inject only
+PASS	host-skill-symlinks	58 linked
+PASS	host-poteto-realpath	/Users/josh-desktop/src/personal/lil-pstack/vendor/pstack-host/.cursor/skills/poteto-mode
+PASS	poteto-scripts-manifest	/Users/josh-desktop/src/personal/lil-pstack/vendor/pstack/skills/poteto-mode/scripts
+PASS	poteto-scripts-install	bun install --frozen-lockfile ok
+PASS	source-version-match	source=0.15.36 vendor=0.15.36
+PASS	source-skill-inventory	match 58
+PASS	source-playbook-inventory	23 vs 23
+PASS	source-agent-inventory	comment-sicko,poteto-agent vs comment-sicko,poteto-agent
+PASS	source-poteto-skill-hash	poteto-mode/SKILL.md sha256
+PASS	source-plugin-json-hash	plugin.json sha256
+PASS	always-on-no-slash-required	wrapper text
+PASS	always-on-skill-body	skill body injected
+PASS	always-on-absolute-path	/Users/josh-desktop/src/personal/lil-pstack/vendor/pstack/skills/poteto-mode/SKILL.md
+PASS	loaded-agent-poteto-agent	ok
+PASS	loaded-agent-comment-sicko	ok
+PASS	soft-dep-create-skill	present (Cursor built-in; authoring-a-skill playbook reads it when present)
+PASS	soft-dep-cursor-team-kit	referenced by poteto-mode; optional external plugin (deslop/control-*), same soft dep as Cursor CLI
+
+27/27 passed; version=0.15.36
